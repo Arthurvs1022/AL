@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Catálogo | AL Elétrica</title>
+<link rel="stylesheet" href="style.css"/>
+
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <span style="display:inline-flex;width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#22c55e);align-items:center;justify-content:center;font-weight:900">AL</span>
+      <span>AL ELÉTRICA, HIDRÁULICA & PARAFUSO</span>
+      <span class="badge">TAMANDARÉ-PE</span>
+    </a>
+    <nav class="nav-links">
+      <a class="btn" href="catalogo.html">Catálogo</a>
+      <a class="btn primary" href="carrinho.html">Carrinho (<span data-cart-badge>0</span>)</a>
+      <a class="btn" href="https://wa.me/5581984195038" target="_blank" rel="noopener">WhatsApp</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <div class="section-title">
+    <h2>Catálogo</h2>
+    <span class="badge">Adicionar no carrinho</span>
+  </div>
+
+  <div class="toolbar">
+    <input id="q" class="input" placeholder="Buscar: cimento, fio, cano, parafuso..." />
+    <select id="cat"></select>
+    <a class="btn primary" href="carrinho.html">Ir pro carrinho</a>
+  </div>
+
+  <div style="height:12px"></div>
+  <section class="grid" data-catalog></section>
+</main>
+<script>
+window.addEventListener("DOMContentLoaded", ()=>{
+  const m=(location.hash||"").match(/cat=([^&]+)/i);
+  if(m){
+    const wanted=decodeURIComponent(m[1]);
+    setTimeout(()=>{
+      const sel=document.querySelector("#cat");
+      if(sel){ sel.value=wanted; sel.dispatchEvent(new Event("change")); }
+    }, 50);
+  }
+});
+</script>
+
+<footer class="footer">
+  <div class="container">
+    <div><b>AL ELÉTRICA, HIDRÁULICA & PARAFUSO</b> • TAMANDARÉ-PE</div>
+    <div class="small">Pedidos via WhatsApp: (81) 98419-5038 • Horário e preços podem variar.</div>
+  </div>
+</footer>
+<script src="products.js"></script>
+<script src="app.js"></script>
+</body></html>
