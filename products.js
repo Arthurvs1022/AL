@@ -7,3 +7,21 @@ window.DELIVERY_FEES = {
   "Frei Damião": 12.0,
   "Outros": 25.0
 };
+
+const CATEGORY_MAP = {
+  "1": "Parafusos e Fixação",
+  "2": "Elétrica",
+  "3": "Hidráulica",
+  "4": "Ferramentas",
+  "6": "Adesivos e Selantes",
+  "8": "Inox e Fixadores Especiais",
+  "10": "Tintas e Solventes",
+  "11": "Acabamentos",
+  "15": "Químicos e Limpeza",
+  "18": "Abraçadeiras e Conexões",
+  "19": "Ferragens",
+  "23": "Piscina",
+  "26": "Tratamento de Água",
+  "44": "Colas Especiais",
+  "58": "Solventes Industriais"
+};
