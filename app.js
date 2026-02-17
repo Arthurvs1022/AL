@@ -98,39 +98,98 @@ function renderFeatured() {
 function renderCatalog() {
   const host = document.querySelector("[data-catalog]");
   if (!host) return;
+
   const q = document.querySelector("#q");
   const cat = document.querySelector("#cat");
+  const sort = document.querySelector("#sort");
+  const loadMoreHost = document.querySelector("[data-loadmore]");
+  const resultCount = document.querySelector("#resultCount");
+
+  // Monta lista de categorias a partir do dataset
   const categories = [
     "Todas",
-    ...Array.from(new Set(window.PRODUCTS.map((p) => p.category))),
+    ...Array.from(new Set((window.PRODUCTS || []).map((p) => p.category))).sort(),
   ];
   cat.innerHTML = categories
     .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
     .join("");
-  function apply() {
+
+  const PAGE_SIZE = 40;
+  let page = 1;
+
+  function getFilteredList() {
     const term = (q.value || "").trim().toLowerCase();
-    const c = cat.value;
-    const list = window.PRODUCTS.filter((p) => {
+    const c = cat.value || "Todas";
+
+    let list = (window.PRODUCTS || []).filter((p) => {
       const mt =
         !term ||
         p.name.toLowerCase().includes(term) ||
-        (p.desc || "").toLowerCase().includes(term);
+        (p.desc || "").toLowerCase().includes(term) ||
+        (p.barcode || "").toLowerCase().includes(term) ||
+        String(p.id || "").includes(term);
       const mc = c === "Todas" || p.category === c;
       return mt && mc;
     });
+
+    // Ordenação
+    const mode = sort?.value || "relev";
+    if (mode === "price_asc") list.sort((a, b) => (a.price || 0) - (b.price || 0));
+    if (mode === "price_desc") list.sort((a, b) => (b.price || 0) - (a.price || 0));
+    if (mode === "name_asc") list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    if (mode === "stock_desc") list.sort((a, b) => (b.stock || 0) - (a.stock || 0));
+
+    return list;
+  }
+
+  function render() {
+    const list = getFilteredList();
+    const shown = list.slice(0, page * PAGE_SIZE);
+
     host.innerHTML =
-      list.map(productCard).join("") ||
+      shown.map(productCard).join("") ||
       `<div class="card padded">Nenhum item encontrado.</div>`;
+
+    // Bind add buttons
     host
       .querySelectorAll("[data-add]")
       .forEach((btn) =>
         btn.addEventListener("click", () => addToCart(btn.dataset.add)),
       );
+
+    // Contador
+    if (resultCount) {
+      resultCount.textContent = `${list.length} itens encontrados • mostrando ${Math.min(
+        shown.length,
+        list.length,
+      )}`;
+    }
+
+    // Load more
+    if (loadMoreHost) {
+      const hasMore = shown.length < list.length;
+      loadMoreHost.innerHTML = hasMore
+        ? `<button class="btn" id="btnMore">Carregar mais</button>`
+        : "";
+      loadMoreHost.querySelector("#btnMore")?.addEventListener("click", () => {
+        page += 1;
+        render();
+      });
+    }
   }
-  q.addEventListener("input", apply);
-  cat.addEventListener("change", apply);
-  apply();
+
+  function resetAndRender() {
+    page = 1;
+    render();
+  }
+
+  q.addEventListener("input", resetAndRender);
+  cat.addEventListener("change", resetAndRender);
+  sort?.addEventListener("change", resetAndRender);
+
+  render();
 }
+
 
 function renderCart() {
   const host = document.querySelector("[data-cart]");
