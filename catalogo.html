@@ -10,7 +10,7 @@
     <header class="nav">
   <div class="container nav-inner">
     
-  <a class="brand" href="index.html">
+    <a class="brand" href="index.html">
       <img src="img/logoAL.jpeg" alt="AL Elétrica" class="logo" />
       <span class="badge">TAMANDARÉ-PE</span>
     </a>
@@ -41,24 +41,12 @@
           class="input"
           placeholder="Buscar: cimento, fio, cano, parafuso..."
         />
-        <select id="cat" aria-label="Categoria"></select>
-        <select id="sort" aria-label="Ordenar">
-          <option value="relev">Ordenar: relevância</option>
-          <option value="price_asc">Menor preço</option>
-          <option value="price_desc">Maior preço</option>
-          <option value="name_asc">Nome (A–Z)</option>
-          <option value="stock_desc">Maior estoque</option>
-        </select>
+        <select id="cat"></select>
         <a class="btn primary" href="carrinho.html">Ir pro carrinho</a>
-      </div>
-      <div class="row" style="justify-content:space-between;align-items:center;margin-top:10px">
-        <div class="small" id="resultCount"></div>
-        <div class="small">Dica: use “Retirar na loja” pra zerar entrega.</div>
       </div>
 
       <div style="height: 12px"></div>
       <section class="grid" data-catalog></section>
-      <div class="center" style="margin:16px 0" data-loadmore></div>
     </main>
     <script>
       window.addEventListener("DOMContentLoaded", () => {

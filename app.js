@@ -2,6 +2,23 @@ const WA_NUMBER = "5581984195038";
 const STORE_NAME = "AL ELÉTRICA, HIDRÁULICA & PARAFUSO";
 const CITY = "TAMANDARÉ-PE";
 
+const PROD_PLACEHOLDER = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='600' height='420' viewBox='0 0 600 420'>
+  <defs>
+    <linearGradient id='g' x1='0' x2='1' y1='0' y2='1'>
+      <stop offset='0' stop-color='#1a1230'/>
+      <stop offset='1' stop-color='#0b0611'/>
+    </linearGradient>
+  </defs>
+  <rect width='600' height='420' rx='28' fill='url(#g)'/>
+  <g opacity='.9' fill='none' stroke='rgba(255,255,255,.22)' stroke-width='10'>
+    <rect x='90' y='90' width='420' height='240' rx='24'/>
+    <path d='M140 290l90-90 70 70 90-100 70 120' />
+    <circle cx='235' cy='175' r='24' />
+  </g>
+  <text x='300' y='365' text-anchor='middle' font-family='system-ui,Segoe UI,Roboto,Arial' font-size='24' fill='rgba(255,255,255,.55)'>Sem imagem</text>
+</svg>`);
+
+
 function brl(v) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -39,6 +56,15 @@ function toast(msg) {
   }, 1800);
   setTimeout(() => el.remove(), 2200);
 }
+
+function productImageSrc(p) {
+  // Opções:
+  // 1) p.image = URL completo ou caminho local
+  // 2) arquivo local em /img/products/<ID>.jpg (ou .png) — tentamos .jpg primeiro
+  if (!p) return PROD_PLACEHOLDER;
+  return p.image || `img/products/${p.id}.jpg`;
+}
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -70,6 +96,9 @@ function removeItem(id) {
 function productCard(p) {
   return `
   <div class="prod">
+    <div class="prod-media">
+      <img class="prod-img" src="${productImageSrc(p)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.onerror=null;this.src=PROD_PLACEHOLDER;" />
+    </div>
     <div class="meta">
       <span class="badge">${escapeHtml(p.category)}</span>
       <span class="price">${brl(p.price)}</span>
@@ -98,98 +127,39 @@ function renderFeatured() {
 function renderCatalog() {
   const host = document.querySelector("[data-catalog]");
   if (!host) return;
-
   const q = document.querySelector("#q");
   const cat = document.querySelector("#cat");
-  const sort = document.querySelector("#sort");
-  const loadMoreHost = document.querySelector("[data-loadmore]");
-  const resultCount = document.querySelector("#resultCount");
-
-  // Monta lista de categorias a partir do dataset
   const categories = [
     "Todas",
-    ...Array.from(new Set((window.PRODUCTS || []).map((p) => p.category))).sort(),
+    ...Array.from(new Set(window.PRODUCTS.map((p) => p.category))),
   ];
   cat.innerHTML = categories
     .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
     .join("");
-
-  const PAGE_SIZE = 40;
-  let page = 1;
-
-  function getFilteredList() {
+  function apply() {
     const term = (q.value || "").trim().toLowerCase();
-    const c = cat.value || "Todas";
-
-    let list = (window.PRODUCTS || []).filter((p) => {
+    const c = cat.value;
+    const list = window.PRODUCTS.filter((p) => {
       const mt =
         !term ||
         p.name.toLowerCase().includes(term) ||
-        (p.desc || "").toLowerCase().includes(term) ||
-        (p.barcode || "").toLowerCase().includes(term) ||
-        String(p.id || "").includes(term);
+        (p.desc || "").toLowerCase().includes(term);
       const mc = c === "Todas" || p.category === c;
       return mt && mc;
     });
-
-    // Ordenação
-    const mode = sort?.value || "relev";
-    if (mode === "price_asc") list.sort((a, b) => (a.price || 0) - (b.price || 0));
-    if (mode === "price_desc") list.sort((a, b) => (b.price || 0) - (a.price || 0));
-    if (mode === "name_asc") list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-    if (mode === "stock_desc") list.sort((a, b) => (b.stock || 0) - (a.stock || 0));
-
-    return list;
-  }
-
-  function render() {
-    const list = getFilteredList();
-    const shown = list.slice(0, page * PAGE_SIZE);
-
     host.innerHTML =
-      shown.map(productCard).join("") ||
+      list.map(productCard).join("") ||
       `<div class="card padded">Nenhum item encontrado.</div>`;
-
-    // Bind add buttons
     host
       .querySelectorAll("[data-add]")
       .forEach((btn) =>
         btn.addEventListener("click", () => addToCart(btn.dataset.add)),
       );
-
-    // Contador
-    if (resultCount) {
-      resultCount.textContent = `${list.length} itens encontrados • mostrando ${Math.min(
-        shown.length,
-        list.length,
-      )}`;
-    }
-
-    // Load more
-    if (loadMoreHost) {
-      const hasMore = shown.length < list.length;
-      loadMoreHost.innerHTML = hasMore
-        ? `<button class="btn" id="btnMore">Carregar mais</button>`
-        : "";
-      loadMoreHost.querySelector("#btnMore")?.addEventListener("click", () => {
-        page += 1;
-        render();
-      });
-    }
   }
-
-  function resetAndRender() {
-    page = 1;
-    render();
-  }
-
-  q.addEventListener("input", resetAndRender);
-  cat.addEventListener("change", resetAndRender);
-  sort?.addEventListener("change", resetAndRender);
-
-  render();
+  q.addEventListener("input", apply);
+  cat.addEventListener("change", apply);
+  apply();
 }
-
 
 function renderCart() {
   const host = document.querySelector("[data-cart]");
@@ -206,6 +176,7 @@ function renderCart() {
       const total = p.price * i.qty;
       return `
     <div class="cart-item">
+      <div class="cart-thumb"><img src="${productImageSrc(p)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.onerror=null;this.src=PROD_PLACEHOLDER;"></div>
       <div><div class="name">${escapeHtml(p.name)}</div><div class="small">${escapeHtml(p.category)} • ${escapeHtml(p.unit)}</div></div>
       <div class="qty">
         <button class="btn" data-dec="${p.id}">-</button>
