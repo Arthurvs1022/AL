@@ -2,68 +2,23 @@ const WA_NUMBER = "5581984195038";
 const STORE_NAME = "AL ELÉTRICA, HIDRÁULICA & PARAFUSO";
 const CITY = "TAMANDARÉ-PE";
 
-const PROD_PLACEHOLDER = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='600' height='420' viewBox='0 0 600 420'>
+const PROD_PLACEHOLDER =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='600' height='420' viewBox='0 0 600 420'>
   <defs>
     <linearGradient id='g' x1='0' x2='1' y1='0' y2='1'>
       <stop offset='0' stop-color='#1a1230'/>
       <stop offset='1' stop-color='#0b0611'/>
     </linearGradient>
   </defs>
-  <rect width='600' height='420' rx='28' fill='url(#g)'/>
-  <g opacity='.9' fill='none' stroke='rgba(255,255,255,.22)' stroke-width='10'>
-    <rect x='90' y='90' width='420' height='240' rx='24'/>
-    <path d='M140 290l90-90 70 70 90-100 70 120' />
-    <circle cx='235' cy='175' r='24' />
+  <rect width='600' height='420' fill='url(#g)'/>
+  <g fill='none' stroke='rgba(255,255,255,.22)' stroke-width='2'>
+    <rect x='130' y='105' width='340' height='210' rx='18'/>
+    <path d='M170 255l70-70 70 70 60-60 70 70'/>
+    <circle cx='245' cy='180' r='20'/>
   </g>
-  <text x='300' y='365' text-anchor='middle' font-family='system-ui,Segoe UI,Roboto,Arial' font-size='24' fill='rgba(255,255,255,.55)'>Sem imagem</text>
+  <text x='50%' y='86%' text-anchor='middle' fill='rgba(255,255,255,.62)' font-family='Arial' font-size='18'>Sem imagem</text>
 </svg>`);
-
-
-function brl(v) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-function loadCart() {
-  try {
-    return JSON.parse(localStorage.getItem("cart") || "[]");
-  } catch {
-    return [];
-  }
-}
-function saveCart(cart) {
-  localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartBadge();
-}
-function updateCartBadge() {
-  const cart = loadCart();
-  const count = cart.reduce((a, i) => a + i.qty, 0);
-  document
-    .querySelectorAll("[data-cart-badge]")
-    .forEach((el) => (el.textContent = count));
-}
-function getProduct(id) {
-  return (window.PRODUCTS || []).find((p) => p.id === id);
-}
-function toast(msg) {
-  const el = document.createElement("div");
-  el.className = "notice";
-  el.style.cssText =
-    "position:fixed;left:18px;right:18px;bottom:18px;max-width:520px;margin:0 auto;z-index:999";
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => {
-    el.style.opacity = "0";
-    el.style.transition = "opacity .25s";
-  }, 1800);
-  setTimeout(() => el.remove(), 2200);
-}
-
-function productImageSrc(p) {
-  // Opções:
-  // 1) p.image = URL completo ou caminho local
-  // 2) arquivo local em /img/products/<ID>.jpg (ou .png) — tentamos .jpg primeiro
-  if (!p) return PROD_PLACEHOLDER;
-  return p.image || `img/products/${p.id}.jpg`;
-}
 
 function escapeHtml(s) {
   return String(s ?? "")
@@ -74,19 +29,48 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+function brl(v) {
+  return (v || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function productImageSrc(p) {
+  return p.image || `img/products/${p.id}.jpg`;
+}
+
+function loadCart() {
+  try {
+    return JSON.parse(localStorage.getItem("AL_CART") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveCart(cart) {
+  localStorage.setItem("AL_CART", JSON.stringify(cart));
+}
+
 function addToCart(id) {
-  const cart = loadCart();
+  let cart = loadCart();
   const item = cart.find((i) => i.id === id);
   if (item) item.qty += 1;
   else cart.push({ id, qty: 1 });
   saveCart(cart);
-  toast("Adicionado ao carrinho ✅");
+  toast("Adicionado ao carrinho!");
+  updateBadges();
 }
+
 function setQty(id, qty) {
   let cart = loadCart();
-  cart = cart.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i));
+  const item = cart.find((i) => i.id === id);
+  if (!item) return;
+  item.qty = Math.max(0, qty);
+  cart = cart.filter((i) => i.qty > 0);
   saveCart(cart);
 }
+
 function removeItem(id) {
   let cart = loadCart();
   cart = cart.filter((i) => i.id !== id);
@@ -97,13 +81,21 @@ function productCard(p) {
   return `
   <div class="prod">
     <div class="prod-media">
-      <img class="prod-img" src="${productImageSrc(p)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.onerror=null;this.src=PROD_PLACEHOLDER;" />
+      <img class="prod-img" src="${productImageSrc(p)}" alt="${escapeHtml(
+        p.name,
+      )}" loading="lazy" onerror="this.onerror=null;this.src=PROD_PLACEHOLDER;" />
     </div>
     <div class="meta">
       <span class="badge">${escapeHtml(p.category)}</span>
       <span class="price">${brl(p.price)}</span>
     </div>
     <h3>${escapeHtml(p.name)}</h3>
+
+    <!-- ✅ TEMPORÁRIO: MOSTRAR CÓDIGO/ID -->
+    <div class="small" style="opacity:.75">Cód.: <b>${escapeHtml(
+      p.id,
+    )}</b></div>
+
     <div class="small">${escapeHtml(p.desc || "")}</div>
     <div class="row" style="margin-top:auto;justify-content:space-between;align-items:center">
       <span class="small">Unid.: ${escapeHtml(p.unit)}</span>
@@ -115,8 +107,8 @@ function productCard(p) {
 function renderFeatured() {
   const host = document.querySelector("[data-featured]");
   if (!host) return;
-  const featured = (window.PRODUCTS || []).slice(0, 8);
-  host.innerHTML = featured.map(productCard).join("");
+  const picks = window.PRODUCTS.slice(0, 8);
+  host.innerHTML = picks.map(productCard).join("");
   host
     .querySelectorAll("[data-add]")
     .forEach((btn) =>
@@ -143,6 +135,7 @@ function renderCatalog() {
       const mt =
         !term ||
         p.name.toLowerCase().includes(term) ||
+        String(p.id).toLowerCase().includes(term) || // ✅ buscar por ID também
         (p.desc || "").toLowerCase().includes(term);
       const mc = c === "Todas" || p.category === c;
       return mt && mc;
@@ -161,6 +154,10 @@ function renderCatalog() {
   apply();
 }
 
+function getProduct(id) {
+  return window.PRODUCTS.find((p) => p.id === id);
+}
+
 function renderCart() {
   const host = document.querySelector("[data-cart]");
   if (!host) return;
@@ -176,11 +173,20 @@ function renderCart() {
       const total = p.price * i.qty;
       return `
     <div class="cart-item">
-      <div class="cart-thumb"><img src="${productImageSrc(p)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.onerror=null;this.src=PROD_PLACEHOLDER;"></div>
-      <div><div class="name">${escapeHtml(p.name)}</div><div class="small">${escapeHtml(p.category)} • ${escapeHtml(p.unit)}</div></div>
+      <div class="cart-thumb"><img src="${productImageSrc(p)}" alt="${escapeHtml(
+        p.name,
+      )}" loading="lazy" onerror="this.onerror=null;this.src=PROD_PLACEHOLDER;"></div>
+      <div>
+        <div class="name">${escapeHtml(p.name)}</div>
+        <div class="small">Cód.: ${escapeHtml(
+          p.id,
+        )} • ${escapeHtml(p.category)} • ${escapeHtml(p.unit)}</div>
+      </div>
       <div class="qty">
         <button class="btn" data-dec="${p.id}">-</button>
-        <input class="input" style="width:60px;text-align:center" value="${i.qty}" data-qty="${p.id}" inputmode="numeric" />
+        <input class="input" style="width:60px;text-align:center" value="${
+          i.qty
+        }" data-qty="${p.id}" inputmode="numeric" />
         <button class="btn" data-inc="${p.id}">+</button>
       </div>
       <div class="price">${brl(total)}</div>
@@ -218,150 +224,87 @@ function renderCart() {
     inp.addEventListener("change", () => {
       const id = inp.dataset.qty;
       const v = parseInt(inp.value, 10);
-      if (Number.isFinite(v) && v > 0) setQty(id, v);
+      setQty(id, isNaN(v) ? 1 : v);
       renderCart();
       renderSummary();
     }),
   );
 }
 
-function onlyDigits(s) {
-  return (s || "").replace(/\D+/g, "");
-}
-function collectCheckoutData() {
-  const nome = document.querySelector("#nome")?.value?.trim() || "";
-  const tel = onlyDigits(document.querySelector("#tel")?.value || "");
-  const pagamento = document.querySelector("#pagamento")?.value || "Pix";
-  const obs = document.querySelector("#obs")?.value?.trim() || "";
-  const retirada = document.querySelector("#retirada")?.checked || false;
-  const bairro = document.querySelector("#bairro")?.value || "Centro";
-  const rua = document.querySelector("#rua")?.value?.trim() || "";
-  const numero = document.querySelector("#numero")?.value?.trim() || "";
-  const complemento =
-    document.querySelector("#complemento")?.value?.trim() || "";
-  return {
-    nome,
-    tel,
-    pagamento,
-    obs,
-    retirada,
-    bairro,
-    rua,
-    numero,
-    complemento,
-  };
-}
-function buildWhatsAppMessage(data, cart, subtotal, fee, total) {
-  const lines = [];
-  lines.push(
-    `Olá! Quero fazer um pedido no *${STORE_NAME}* (${CITY}).`,
-    "",
-    "*Itens:*",
-  );
-  cart.forEach((i) => {
+function cartTotal(cart) {
+  return cart.reduce((sum, i) => {
     const p = getProduct(i.id);
-    if (!p) return;
-    lines.push(`- ${i.qty}x ${p.name} (${p.unit}) — ${brl(p.price * i.qty)}`);
-  });
-  lines.push(
-    "",
-    `Subtotal: *${brl(subtotal)}*`,
-    `Entrega: *${brl(fee)}*`,
-    `Total: *${brl(total)}*`,
-    "",
-    "*Dados:*",
-    `Nome: ${data.nome || "-"}`,
-    `Telefone: ${data.tel || "-"}`,
-    `Pagamento: ${data.pagamento}`,
-    `Retirar na loja: ${data.retirada ? "Sim" : "Não"}`,
-  );
-  if (!data.retirada) {
-    lines.push(
-      `Bairro: ${data.bairro}`,
-      `Rua: ${data.rua || "-"}`,
-      `Número: ${data.numero || "-"}`,
-    );
-    if (data.complemento) lines.push(`Complemento: ${data.complemento}`);
-  }
-  if (data.obs) lines.push("", `Obs.: ${data.obs}`);
-  lines.push("", "Pode confirmar disponibilidade e prazo de entrega? 🙏");
-  return lines.join("\n");
+    if (!p) return sum;
+    return sum + p.price * i.qty;
+  }, 0);
 }
 
 function renderSummary() {
   const host = document.querySelector("[data-summary]");
   if (!host) return;
   const cart = loadCart();
-  const subtotal = cart.reduce((a, i) => {
-    const p = getProduct(i.id);
-    return a + (p ? p.price * i.qty : 0);
-  }, 0);
-  const bairroSel = document.querySelector("#bairro");
-  const retirada = document.querySelector("#retirada");
-  const feeTable = window.DELIVERY_FEES || {};
-  if (bairroSel && bairroSel.options.length === 0)
-    bairroSel.innerHTML = Object.keys(feeTable)
-      .map(
-        (b) =>
-          `<option value="${escapeHtml(b)}">${escapeHtml(b)} — ${brl(feeTable[b])}</option>`,
-      )
-      .join("");
-  const fee =
-    retirada && retirada.checked ? 0 : (feeTable[bairroSel?.value] ?? 0);
-  const total = subtotal + fee;
+  const total = cartTotal(cart);
   host.innerHTML = `
-    <div class="card padded totals">
-      <div class="line"><span>Subtotal</span><span>${brl(subtotal)}</span></div>
-      <div class="line"><span>Entrega</span><span>${brl(fee)}</span></div>
-      <div class="line grand"><span>Total</span><span>${brl(total)}</span></div>
-      <button class="btn success" id="btnWhats">Finalizar no WhatsApp</button>
-      <div class="small">Você confirma tudo no WhatsApp.</div>
-    </div>`;
-  document.querySelector("#btnWhats")?.addEventListener("click", () => {
-    const data = collectCheckoutData();
-    const msg = buildWhatsAppMessage(data, cart, subtotal, fee, total);
-    window.open(
-      `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`,
-      "_blank",
-    );
+    <div class="card padded">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div><strong>Total</strong><div class="small">${cart.length} item(ns)</div></div>
+        <div class="price">${brl(total)}</div>
+      </div>
+      <button class="btn primary" style="width:100%;margin-top:10px" id="btnWhats">Enviar no WhatsApp</button>
+    </div>
+  `;
+  const btn = document.querySelector("#btnWhats");
+  btn?.addEventListener("click", () => sendWhats(cart));
+}
+
+function sendWhats(cart) {
+  const total = brl(cartTotal(cart));
+  const lines = cart
+    .map((i) => {
+      const p = getProduct(i.id);
+      if (!p) return "";
+      return `• ${p.name} (Cód.: ${p.id}) — ${i.qty} ${p.unit}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  const msg =
+    `Olá! Gostaria de fazer um pedido na ${STORE_NAME} (${CITY}).\n\n` +
+    `${lines}\n\n` +
+    `Total estimado: ${total}`;
+
+  const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(url, "_blank");
+}
+
+function updateBadges() {
+  const cart = loadCart();
+  const n = cart.reduce((a, b) => a + b.qty, 0);
+  document.querySelectorAll("[data-cart-badge]").forEach((el) => {
+    el.textContent = n;
+    el.style.display = n > 0 ? "inline-flex" : "none";
   });
 }
 
-function masks() {
-  const tel = document.querySelector("#tel");
-  if (tel)
-    tel.addEventListener("input", () => {
-      let v = tel.value.replace(/\D/g, "").slice(0, 11);
-      if (v.length <= 10)
-        v = v.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
-      else
-        v = v.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
-      tel.value = v;
-    });
+function toast(text) {
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add("show"), 10);
+  setTimeout(() => {
+    t.classList.remove("show");
+    setTimeout(() => t.remove(), 300);
+  }, 1800);
 }
 
 function init() {
-  updateCartBadge();
+  window.PRODUCTS = window.PRODUCTS || [];
+  updateBadges();
   renderFeatured();
   renderCatalog();
   renderCart();
   renderSummary();
-  masks();
-  document.querySelector("#bairro")?.addEventListener("change", renderSummary);
-  document.querySelector("#retirada")?.addEventListener("change", () => {
-    const disabled = document.querySelector("#retirada").checked;
-    document
-      .querySelectorAll("[data-address]")
-      .forEach((el) => (el.style.opacity = disabled ? ".55" : "1"));
-    document
-      .querySelectorAll("[data-address] input, [data-address] select")
-      .forEach((el) => (el.disabled = disabled));
-    renderSummary();
-  });
 }
-document.addEventListener("DOMContentLoaded", init);
 
-window.PRODUCTS = window.PRODUCTS.map(p => ({
-  ...p,
-  category: CATEGORY_MAP[p.category] || "Outros"
-}));
+document.addEventListener("DOMContentLoaded", init);
