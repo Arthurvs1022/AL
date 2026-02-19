@@ -303,6 +303,27 @@ textarea {
   background: rgba(139, 92, 246, 0.1);
   color: #e9ddff;
 }
+
+.cart-item{
+  display:grid;
+  grid-template-columns: 64px 1fr max-content 120px 40px;
+  gap:10px;
+  align-items:center;
+}
+
+.price{ white-space:nowrap; }
+
+.cart-item .qty { flex-wrap: nowrap; }
+.cart-item .qty .btn { padding: 6px 10px; min-width: 36px; }
+.cart-item .qty .input { width: 56px !important; padding: 8px 10px; text-align:center; }
+
+@media (max-width: 720px) {
+  .cart-item { grid-template-columns: 64px 1fr; align-items: start; }
+  .cart-item .qty { grid-column: 2; }
+  .cart-item .price { grid-column: 2; justify-self: start; margin-top: 6px; }
+  .cart-item .btn.danger { grid-column: 2; justify-self: end; margin-top: 6px; }
+}
+
 @media (max-width: 980px) {
   .hero {
     grid-template-columns: 1fr;
