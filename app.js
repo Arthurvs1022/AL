@@ -308,3 +308,62 @@ function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
+function renderCatalog() {
+  const host = document.querySelector("[data-catalog]");
+  if (!host) return;
+
+  const q = document.querySelector("#q");
+  const cat = document.querySelector("#cat");
+
+  const rawCats = Array.from(
+    new Set(window.PRODUCTS.map((p) => String(p.category)))
+  );
+
+  rawCats.sort((a, b) => {
+    const la = CATEGORY_MAP[a] || a;
+    const lb = CATEGORY_MAP[b] || b;
+    return la.localeCompare(lb, "pt-BR");
+  });
+
+  const categories = ["Todas", ...rawCats];
+
+  cat.innerHTML = categories
+    .map((c) => {
+      if (c === "Todas")
+        return `<option value="Todas">Todas</option>`;
+      const label = CATEGORY_MAP[c] || `Categoria ${c}`;
+      return `<option value="${escapeHtml(c)}">${escapeHtml(label)}</option>`;
+    })
+    .join("");
+
+  function apply() {
+    const term = (q.value || "").trim().toLowerCase();
+    const c = cat.value;
+
+    const list = window.PRODUCTS.filter((p) => {
+      const mt =
+        !term ||
+        p.name.toLowerCase().includes(term) ||
+        String(p.id).toLowerCase().includes(term) ||
+        (p.desc || "").toLowerCase().includes(term);
+
+      const mc = c === "Todas" || String(p.category) === c;
+      return mt && mc;
+    });
+
+    host.innerHTML =
+      list.map(productCard).join("") ||
+      `<div class="card padded">Nenhum item encontrado.</div>`;
+
+    host
+      .querySelectorAll("[data-add]")
+      .forEach((btn) =>
+        btn.addEventListener("click", () => addToCart(btn.dataset.add))
+      );
+  }
+
+  q.addEventListener("input", apply);
+  cat.addEventListener("change", apply);
+  apply();
+}
