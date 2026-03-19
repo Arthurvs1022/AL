@@ -121,63 +121,38 @@ function renderCatalog() {
   if (!host) return;
   const q = document.querySelector("#q");
   const cat = document.querySelector("#cat");
-
   const categories = [
     "Todas",
     ...Array.from(new Set(window.PRODUCTS.map((p) => p.category))),
   ];
-
   cat.innerHTML = categories
     .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
     .join("");
-
-  // Variável para controlar o tempo da busca
-  let searchTimer;
-
   function apply() {
     const term = (q.value || "").trim().toLowerCase();
     const c = cat.value;
-
     const list = window.PRODUCTS.filter((p) => {
       const mt =
         !term ||
         p.name.toLowerCase().includes(term) ||
-        String(p.id).toLowerCase().includes(term) ||
+        String(p.id).toLowerCase().includes(term) || // ✅ buscar por ID também
         (p.desc || "").toLowerCase().includes(term);
       const mc = c === "Todas" || p.category === c;
       return mt && mc;
     });
-
-    // OTIMIZAÇÃO: Mostra apenas os primeiros 100 itens para não travar a tela
-    // O usuário raramente vê mais que isso de uma vez.
-    const limitedList = list.slice(0, 100);
-
     host.innerHTML =
-      limitedList.map(productCard).join("") ||
+      list.map(productCard).join("") ||
       `<div class="card padded">Nenhum item encontrado.</div>`;
-
-    host.querySelectorAll("[data-add]").forEach((btn) =>
-      btn.addEventListener("click", () => addToCart(btn.dataset.add))
-    );
+    host
+      .querySelectorAll("[data-add]")
+      .forEach((btn) =>
+        btn.addEventListener("click", () => addToCart(btn.dataset.add)),
+      );
   }
-
-  // EVENTOS OTIMIZADOS:
-  // No campo de busca, esperamos 300ms após o usuário parar de digitar
-  q.addEventListener("input", () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(apply, 300);
-  });
-
-  // Na categoria, a resposta pode ser imediata
-  cat.addEventListener("change", apply);
-
-  // Carregamento inicial
-  apply();
-}
   q.addEventListener("input", apply);
   cat.addEventListener("change", apply);
   apply();
-
+}
 
 function getProduct(id) {
   return window.PRODUCTS.find((p) => p.id === id);
