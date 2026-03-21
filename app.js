@@ -363,7 +363,14 @@ function renderCatalog() {
       );
   }
 
-  q.addEventListener("input", apply);
+  let timeout;
+
+q.addEventListener("input", () => {
+  clearTimeout(timeout);
+  timeout = setTimeout(() => {
+    apply();
+  }, 300);
+});
   cat.addEventListener("change", apply);
   apply();
 }
